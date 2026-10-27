@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { PROJECTIONS, makeCustomUTMDef, getGamma, sv, w360, disp, fmtMC, ARROW, REF_LEN } from './geo.js';
-import { addMarkers, arrowOut, arrowFrom, drawRose, renderBaseMap, addUTMZoneOverlay } from './draw.js';
+import { addMarkers, arrowOut, arrowFrom, drawRose, renderBaseMap, addUTMZoneOverlay, halo } from './draw.js';
 import Theory from './Theory.jsx';
 import './MeridianConvergence.css';
 
@@ -141,14 +141,14 @@ function Explorer({ pdef, onBack }) {
         gArrows.append('text')
           .attr('x',sx+8).attr('y',sy+16)
           .attr('fill','#6bffaa').attr('font-size','10px').attr('font-weight','700')
-          .text(`MC=${fmtMC(-gv)}`);
+          .call(halo).text(`MC=${fmtMC(-gv)}`);
         // WD_grid label near tail of arrow
         const [tdx, tdy] = sv(gv + wdTrue);
         gArrows.append('text')
           .attr('x', sx + tdx*ARROW).attr('y', sy + tdy*ARROW + 16)
           .attr('fill','#6baaff').attr('font-size','9px').attr('font-weight','600')
           .attr('text-anchor','middle')
-          .text(`Grid: ${disp(wdGrid)}°`);
+          .call(halo).text(`Grid: ${disp(wdGrid)}°`);
         drawRose(gRose, gv, '-e');
       }
     }

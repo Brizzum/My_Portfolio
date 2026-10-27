@@ -4,6 +4,8 @@ const REFERENCES = [
   { title: 'Snyder (1987), Map Projections — A Working Manual, USGS Professional Paper 1395',
     url: 'https://pubs.usgs.gov/pp/1395/report.pdf',
     note: 'Standard reference for the projection formulas, including convergence.' },
+  { title: 'QGIS — A Gentle Introduction to GIS: Coordinate Reference Systems',
+    url: 'https://docs.qgis.org/3.44/en/docs/gentle_gis_introduction/coordinate_reference_systems.html' },
   { title: 'pyproj — Proj.get_factors (meridian_convergence)',
     url: 'https://pyproj4.github.io/pyproj/stable/api/proj.html#pyproj.Proj.get_factors',
     note: 'Source of the sign convention used for MC here.' },

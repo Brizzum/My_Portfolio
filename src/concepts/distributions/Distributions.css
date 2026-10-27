@@ -10,6 +10,16 @@
 .dist-slider { display: flex; flex-direction: column; gap: 2px; font-size: .82rem; color: #c3c2b7; }
 .dist-slider input { width: 220px; accent-color: #e94560; }
 
+.dist-axes { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: .82rem; color: #c3c2b7; margin: 4px 0 10px; }
+.dist-axes label { display: flex; align-items: center; gap: 6px; }
+.dist-axes input[type=number] {
+  width: 80px; background: #1a2a3e; border: 1px solid #0f3460; color: #e0e0ff; border-radius: 4px; padding: 3px 5px;
+}
+.dist-axes input:disabled { opacity: .45; }
+.dist-axes input[aria-invalid=true] { border-color: #e66767; }
+.dist-check input { accent-color: #e94560; }
+.dist-err { color: #e66767; font-size: .78rem; }
+
 .dist-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: .8rem; color: #c3c2b7; margin: 6px 0; }
 .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
 .swatch--pct { background: rgba(160, 200, 255, .25); border: 1px dashed #c3c2b7; }

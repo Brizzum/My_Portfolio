@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { DISTRIBUTIONS, defaultParams } from './distributions.js';
 import './Distributions.css';
@@ -15,26 +15,53 @@ const MARKERS = [
   { key: 'mode', label: 'Mode', color: '#199e70' },
 ];
 
+// Axis limits that show the bulk of the distribution: x from the 0.1% to the
+// 99.9% quantile (from 0 for positive support), y up to just above the density
+// peak. The y-limit uses the 98th percentile of sampled densities, so singular
+// densities (e.g. Weibull k < 1 at x = 0) do not flatten the rest of the curve.
+function fitAxes(dist, params) {
+  const xmin = dist.cdf(0, params) === 0 ? 0 : dist.quantile(0.001, params);
+  const xmax = dist.quantile(0.999, params);
+  const dens = d3.range(N + 1).map(i => dist.pdf(xmin + (xmax - xmin) * i / N, params));
+  const ymax = 1.15 * d3.quantile(dens.filter(Number.isFinite), 0.98);
+  return { xmin, xmax, ymax };
+}
+
+const toInputs = ax => Object.fromEntries(Object.entries(ax).map(([k, v]) => [k, String(+v.toPrecision(3))]));
+
 export default function Distributions() {
   const [distKey, setDistKey] = useState('normal');
   const [params, setParams] = useState(defaultParams(DISTRIBUTIONS.normal));
   const [pct, setPct] = useState(90);
   const [hoverX, setHoverX] = useState(null);
+  const [fixed, setFixed] = useState(true);
+  const [limits, setLimits] = useState(toInputs(fitAxes(DISTRIBUTIONS.normal, defaultParams(DISTRIBUTIONS.normal))));
   const dist = DISTRIBUTIONS[distKey];
 
   const selectDist = key => {
+    const p = defaultParams(DISTRIBUTIONS[key]);
     setDistKey(key);
-    setParams(defaultParams(DISTRIBUTIONS[key]));
+    setParams(p);
+    setLimits(toInputs(fitAxes(DISTRIBUTIONS[key], p)));
+  };
+  const toggleFixed = on => {
+    if (on) setLimits(toInputs(fitAxes(dist, params)));   // freeze the current fit
+    setFixed(on);
   };
 
+  const parsed = Object.fromEntries(Object.entries(limits).map(([k, v]) => [k, parseFloat(v)]));
+  const limitsValid = Object.values(parsed).every(Number.isFinite) && parsed.xmin < parsed.xmax && parsed.ymax > 0;
+  // While a limit is being edited into an invalid state, keep the last valid limits.
+  const lastValid = useRef(parsed);
+  if (limitsValid) lastValid.current = parsed;
+  const axes = fixed ? lastValid.current : fitAxes(dist, params);
+
   const model = useMemo(() => {
-    const positive = dist.cdf(0, params) === 0;
-    const lo = positive ? 0 : dist.quantile(0.001, params);
-    const hi = dist.quantile(0.999, params);
+    const lo = axes.xmin, hi = axes.xmax;
     const xs = d3.range(N + 1).map(i => lo + (hi - lo) * i / N);
     const stats = Object.fromEntries(MARKERS.map(m => [m.key, dist[m.key].value(params)]));
     return {
-      lo, hi, xs,
+      lo, hi, xs, ymax: axes.ymax,
       pdf: xs.map(x => dist.pdf(x, params)),
       cdf: xs.map(x => dist.cdf(x, params)),
       stats,
@@ -42,7 +69,7 @@ export default function Distributions() {
       q3: dist.quantile(0.75, params),
       xp: dist.quantile(pct / 100, params),
     };
-  }, [dist, params, pct]);
+  }, [dist, params, pct, axes.xmin, axes.xmax, axes.ymax]);
 
   const rows = [
     ...MARKERS.map(m => ({ ...m, formula: dist[m.key].formula, value: model.stats[m.key] })),
@@ -76,6 +103,19 @@ export default function Distributions() {
           <span>Percentile p = <strong>{pct}%</strong></span>
           <input type="range" min="1" max="99" step="1" value={pct} onChange={e => setPct(+e.target.value)} />
         </label>
+      </div>
+
+      <div className="dist-axes">
+        <label className="dist-check">
+          <input type="checkbox" checked={fixed} onChange={e => toggleFixed(e.target.checked)} /> Fix axes
+        </label>
+        {[['xmin', 'x min'], ['xmax', 'x max'], ['ymax', 'PDF y max']].map(([k, label]) => (
+          <label key={k}>{label}
+            <input type="number" value={limits[k]} disabled={!fixed} aria-invalid={fixed && !limitsValid}
+              onChange={e => setLimits({ ...limits, [k]: e.target.value })} />
+          </label>
+        ))}
+        {fixed && !limitsValid && <span className="dist-err">Need x min &lt; x max and y max &gt; 0</span>}
       </div>
 
       <div className="dist-legend">
@@ -112,9 +152,7 @@ function Chart({ title, kind, model, pct, hoverX, setHoverX, dist, params }) {
   const { lo, hi, xs, stats, xp } = model;
   const ys = model[kind];
   const x = d3.scaleLinear().domain([lo, hi]).range([MARGIN.left, W - MARGIN.right]);
-  // PDF y-range from the 98th percentile of sampled densities, so singular
-  // densities (e.g. Weibull k < 1 at x = 0) do not flatten the rest of the curve.
-  const yMax = kind === 'cdf' ? 1 : 1.15 * d3.quantile(ys.filter(Number.isFinite), 0.98);
+  const yMax = kind === 'cdf' ? 1 : model.ymax;
   const y = d3.scaleLinear().domain([0, yMax]).range([H - MARGIN.bottom, MARGIN.top]);
   const pts = xs.map((xv, i) => [xv, ys[i]]);
   const line = d3.line().defined(d => Number.isFinite(d[1])).x(d => x(d[0])).y(d => y(d[1]));
@@ -156,16 +194,15 @@ function Chart({ title, kind, model, pct, hoverX, setHoverX, dist, params }) {
         <g clipPath={`url(#${clipId})`}>
           {shade && <path className="shade" d={shade} />}
           <path className="curve" d={line(pts)} />
+          {/* percentile guide */}
+          {kind === 'cdf' && (
+            <polyline className="pct-guide" points={`${x(lo)},${y(pct / 100)} ${x(xp)},${y(pct / 100)} ${x(xp)},${y(0)}`} />
+          )}
+          {kind === 'pdf' && <line className="pct-guide" x1={x(xp)} x2={x(xp)} y1={y(0)} y2={MARGIN.top} />}
         </g>
 
-        {/* percentile guide */}
-        {kind === 'cdf' && (
-          <polyline className="pct-guide" points={`${x(lo)},${y(pct / 100)} ${x(xp)},${y(pct / 100)} ${x(xp)},${y(0)}`} />
-        )}
-        {kind === 'pdf' && <line className="pct-guide" x1={x(xp)} x2={x(xp)} y1={y(0)} y2={MARGIN.top} />}
-
         {/* mean / median / mode, labels stacked so coincident markers stay readable */}
-        {MARKERS.map((m, i) => (
+        {MARKERS.filter(m => stats[m.key] >= lo && stats[m.key] <= hi).map(m => { const i = MARKERS.indexOf(m); return (
           <g key={m.key}>
             <line x1={x(stats[m.key])} x2={x(stats[m.key])} y1={y(0)} y2={MARGIN.top - 4 - 12 * (2 - i)}
               stroke={m.color} strokeWidth="2" />
@@ -173,7 +210,7 @@ function Chart({ title, kind, model, pct, hoverX, setHoverX, dist, params }) {
               {m.label} {fmt(stats[m.key])}
             </text>
           </g>
-        ))}
+        ); })}
 
         {/* hover crosshair */}
         {hoverX !== null && Number.isFinite(hoverY) && (

@@ -6,6 +6,12 @@ import { sv, fmtMC } from './geo.js';
 
 const countries = feature(world, world.objects.countries);
 
+// Dark outline behind text so labels stay legible over any map background.
+export const halo = sel => sel.attr('stroke','#0a1628').attr('stroke-width',2.5)
+  .attr('stroke-linejoin','round').attr('paint-order','stroke');
+
+const fmtLon = lon => `${Math.abs(lon)}°${lon < 0 ? 'W' : 'E'}`;
+
 // ─── SVG marker defs ──────────────────────────────────────────────────────────
 export function addMarkers(svgSel, sfx) {
   const defs = svgSel.append('defs');
@@ -30,7 +36,7 @@ export function arrowOut(g, sx, sy, angleDeg, len, color, mid, label) {
       .attr('x', x1 + dx*10 - dy*5).attr('y', y1 + dy*10 + dx*5)
       .attr('fill',color).attr('font-size','9px').attr('font-weight','700')
       .attr('text-anchor','middle').attr('dominant-baseline','middle')
-      .text(label);
+      .call(halo).text(label);
   }
 }
 
@@ -47,7 +53,7 @@ export function arrowFrom(g, sx, sy, angleDeg, len, color, mid, label) {
       .attr('x', tx + dx*12).attr('y', ty + dy*12)
       .attr('fill',color).attr('font-size','10px').attr('font-weight','700')
       .attr('text-anchor','middle').attr('dominant-baseline','middle')
-      .text(label);
+      .call(halo).text(label);
   }
 }
 
@@ -59,24 +65,27 @@ export function drawRose(g, gv, sfx) {
     .attr('fill','#0a1628').attr('fill-opacity',.85)
     .attr('stroke','#2a4060').attr('stroke-width',1);
 
-  const ra = (deg, color, mid, lbl) => {
+  // TN label on the side True North leans to, GN label on the other side.
+  const tnSide = (gv ?? 0) < 0 ? -1 : 1;
+  const ra = (deg, color, mid, lbl, side) => {
     const [dx,dy] = sv(deg);
     g.append('line')
       .attr('x1',-dx*4).attr('y1',-dy*4).attr('x2',dx*(R-2)).attr('y2',dy*(R-2))
       .attr('stroke',color).attr('stroke-width',1.8).attr('marker-end',`url(#${mid})`);
     g.append('text')
-      .attr('x',dx*(R+10)).attr('y',dy*(R+10))
-      .attr('fill',color).attr('font-size','8px').attr('font-weight','700')
-      .attr('text-anchor','middle').attr('dominant-baseline','middle').text(lbl);
+      .attr('x',dx*(R+6) + side*3).attr('y',dy*(R+6))
+      .attr('fill',color).attr('font-size','9px').attr('font-weight','700')
+      .attr('text-anchor', side < 0 ? 'end' : 'start').attr('dominant-baseline','middle')
+      .call(halo).text(lbl);
   };
 
-  ra(0,    '#6baaff', 'ab'+sfx, 'GN');       // Grid North = screen-up
-  ra(gv ?? 0, '#ff6b6b', 'ar'+sfx, 'TN');    // True North = screen-up + gamma
+  ra(0,    '#6baaff', 'ab'+sfx, 'GN', -tnSide);   // Grid North = screen-up
+  ra(gv ?? 0, '#ff6b6b', 'ar'+sfx, 'TN', tnSide); // True North = screen-up + gamma
 
   if (gv !== null && gv !== undefined && Math.abs(gv) > 0.4) {
     g.append('text').attr('x',0).attr('y',R+15)
-      .attr('fill','#6bffaa').attr('font-size','7px').attr('text-anchor','middle')
-      .text(`γ=${fmtMC(gv)}`);
+      .attr('fill','#6bffaa').attr('font-size','9px').attr('text-anchor','middle')
+      .call(halo).text(`γ=${fmtMC(gv)}`);
   }
 }
 
@@ -122,17 +131,18 @@ export function addUTMZoneOverlay(gMap, path, proj, utmZone, forExplorer) {
     .attr('opacity',0.9);
 
   // Labels (explorer only — too small for thumbnails)
+  // The zone is narrow on screen, so the central-meridian label sits above and
+  // the boundary labels sit one row lower, outside their meridians.
   if (forExplorer && proj) {
-    [[utmZone.w,'#ffaa50'],[utmZone.cm,'#ff7040'],[utmZone.e,'#ffaa50']].forEach(([lon, col]) => {
-      const pt = proj([lon, utmZone.labelLat]);
-      if (!pt || !isFinite(pt[0])) return;
-      const label = lon === utmZone.cm ? `${lon}°E (CM)` : `${lon}°E`;
-      gMap.append('text')
-        .attr('x', pt[0]).attr('y', pt[1] - 6)
-        .attr('fill', col).attr('font-size','9px').attr('font-weight','700')
-        .attr('text-anchor','middle').attr('stroke','#0a1628')
-        .attr('stroke-width',2).attr('paint-order','stroke')
-        .text(label);
-    });
+    [[utmZone.w,'#ffaa50','end',-4,10], [utmZone.cm,'#ff7040','middle',0,-6], [utmZone.e,'#ffaa50','start',4,10]]
+      .forEach(([lon, col, anchor, ox, oy]) => {
+        const pt = proj([lon, utmZone.labelLat]);
+        if (!pt || !isFinite(pt[0])) return;
+        gMap.append('text')
+          .attr('x', pt[0] + ox).attr('y', pt[1] + oy)
+          .attr('fill', col).attr('font-size','9px').attr('font-weight','700')
+          .attr('text-anchor', anchor).call(halo)
+          .text(lon === utmZone.cm ? `${fmtLon(lon)} (CM)` : fmtLon(lon));
+      });
   }
 }
