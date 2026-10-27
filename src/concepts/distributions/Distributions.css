@@ -1,0 +1,36 @@
+.dist-lead { font-size: .88rem; color: var(--text-muted); max-width: 860px; }
+
+.dist-controls { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: flex-end; margin: 14px 0 8px; }
+.dist-tabs { display: flex; gap: 4px; flex-basis: 100%; flex-wrap: wrap; }
+.dist-tabs button {
+  background: #1a3a60; border: 1px solid #2a5a90; color: #a0c8ff; border-radius: 5px;
+  padding: 5px 14px; font-size: .85rem; cursor: pointer;
+}
+.dist-tabs button.active { background: #2a5a90; color: #fff; }
+.dist-slider { display: flex; flex-direction: column; gap: 2px; font-size: .82rem; color: #c3c2b7; }
+.dist-slider input { width: 220px; accent-color: #e94560; }
+
+.dist-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: .8rem; color: #c3c2b7; margin: 6px 0; }
+.swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.swatch--pct { background: rgba(160, 200, 255, .25); border: 1px dashed #c3c2b7; }
+
+.dist-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.dist-chart { margin: 0; background: #0f1923; border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+.dist-chart figcaption { font-size: .8rem; color: #c3c2b7; padding: 0 4px 4px; }
+.dist-chart svg { width: 100%; height: auto; display: block; cursor: crosshair; }
+.dist-chart .grid { stroke: #22304a; stroke-width: 1; }
+.dist-chart .axis { stroke: #52607a; }
+.dist-chart .tick, .dist-chart .axis-label { fill: #8a94a8; font-size: 11px; }
+.dist-chart .curve { fill: none; stroke: #f0efec; stroke-width: 2; }
+.dist-chart .shade { fill: rgba(160, 200, 255, .2); }
+.dist-chart .pct-guide { fill: none; stroke: #c3c2b7; stroke-width: 1.2; stroke-dasharray: 4 3; }
+.dist-chart .marker-label { fill: #f0efec; font-size: 10.5px; }
+.dist-chart .hover line { stroke: #8a94a8; stroke-width: 1; }
+.dist-chart .hover circle { fill: #f0efec; stroke: #0f1923; stroke-width: 2; }
+.dist-chart .readout { font-size: .78rem; color: #c3c2b7; padding: 2px 4px 0; min-height: 1.2em; font-variant-numeric: tabular-nums; }
+
+.dist-table { border-collapse: collapse; margin-top: 18px; font-size: .85rem; }
+.dist-table th, .dist-table td { padding: 5px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+.dist-table th { color: var(--text-muted); font-weight: 600; }
+.dist-table .formula { font-family: 'Cambria Math', Georgia, serif; color: #c3c2b7; }
+.dist-table .num { font-variant-numeric: tabular-nums; text-align: right; }

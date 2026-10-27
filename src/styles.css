@@ -1,0 +1,45 @@
+*, *::before, *::after { box-sizing: border-box; }
+:root {
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --border: #0f3460;
+  --text: #e0e0e0;
+  --text-muted: #7090b0;
+  --accent: #e94560;
+  --link: #a0c8ff;
+  color-scheme: dark;
+}
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.55;
+}
+a { color: var(--link); }
+h1 { font-size: 1.5rem; color: var(--accent); margin: 0 0 .5rem; }
+h2 { font-size: 1.15rem; margin: 1.5rem 0 .5rem; }
+h3 { font-size: 1rem; margin: 1.2rem 0 .4rem; color: var(--link); }
+
+.site-header {
+  display: flex; align-items: center; gap: 24px; padding: 10px 16px;
+  background: var(--border); border-bottom: 1px solid #1a4a80;
+}
+.site-header .brand { font-weight: 700; color: #fff; text-decoration: none; }
+.site-header nav { display: flex; gap: 16px; }
+.site-header nav a { color: var(--text-muted); text-decoration: none; }
+.site-header nav a.active { color: #fff; }
+
+.page { max-width: 1200px; margin: 0 auto; padding: 20px 16px 48px; }
+
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 16px; }
+.concept-card {
+  display: block; padding: 14px 16px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: var(--text);
+  transition: border-color .18s, transform .14s;
+}
+.concept-card:hover { border-color: #4a8adc; transform: translateY(-2px); }
+.concept-card h2 { margin: 0 0 6px; font-size: 1rem; color: var(--link); }
+.concept-card p { margin: 0; font-size: .85rem; color: var(--text-muted); }
+
+.theory { max-width: 860px; margin-top: 32px; font-size: .92rem; }
+.theory .eq { text-align: center; font-family: 'Cambria Math', Georgia, serif; font-size: 1rem; }
+.theory code { background: var(--surface); padding: 0 4px; border-radius: 3px; }
+.refs .ref-note { color: var(--text-muted); }
